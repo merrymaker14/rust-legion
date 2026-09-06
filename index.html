@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <title>Ржавый легион</title>
+  <!-- Критический стиль инлайном: до основного CSS страница — тёмный экран
+       загрузки, а не голая разметка. Сообщение об отказе WebGL тоже здесь.
+       Внутри style комментариев нет намеренно: экстрактор словаря берёт
+       кириллицу между тегами. -->
+  <style>
+    html, body { margin: 0; height: 100%; background: #0e0f12; overflow: hidden; }
+    #app { visibility: hidden; }
+    #boot {
+      position: fixed; inset: 0; z-index: 999; background: #0e0f12;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #boot .dot {
+      width: 18px; height: 18px; border-radius: 50%; background: #ff8a3c;
+      box-shadow: 0 0 24px rgba(255, 138, 60, 0.7);
+      animation: boot-pulse 1s ease-in-out infinite;
+    }
+    @keyframes boot-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.6); opacity: 1; }
+    }
+    #boot-fail {
+      position: absolute; left: 24px; right: 24px; top: 50%; margin-top: 36px;
+      text-align: center; color: #e6dccf; font: 16px/1.5 'Segoe UI', Roboto, Arial, sans-serif;
+    }
+    #boot-fail[hidden] { display: none; }
+    #boot:has(#boot-fail:not([hidden])) .dot { display: none; }
+  </style>
+  <script>window.__LANGS=["en"];window.__CLOUD_KEYS=["rl_save"];window.__LOCAL_KEYS=["rl_lang","rl_sound_off"];</script>
+<script src="./libs/vk-bridge.min.js"></script>
+<script>window.__PLATFORM__='vkok';</script>
+<script src="./libs/vkok-boot.js"></script>
+  <script type="module" crossorigin src="./assets/index-CTH7r_7c.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CQkXBpxy.css">
+</head>
+<body>
+  <div id="boot" role="status" aria-live="polite" aria-label="Загрузка…">
+    <div class="dot"></div>
+    <div id="boot-fail" hidden>Не удалось запустить 3D-графику. Обновите браузер или включите WebGL.</div>
+  </div>
+  <div id="app">
+    <canvas id="game"></canvas>
+
+    <!-- Верхняя панель: деньги и кнопка назад. Живёт на всех экранах кроме титула. -->
+    <div id="top" class="top" hidden>
+      <button id="btn-back" class="icon-btn" aria-label="Назад">←</button>
+      <div class="coins"><span class="coin-ico" aria-hidden="true">●</span> <span id="coins">0</span></div>
+      <button id="btn-sound-top" class="icon-btn sound-btn" aria-label="Звук">♪</button>
+    </div>
+
+    <!-- Титул -->
+    <div id="title" class="screen menu">
+      <div class="panel">
+        <h1>РЖАВЫЙ ЛЕГИОН</h1>
+        <p class="tagline">Отскреби. Покрась. Выпусти на арену.</p>
+        <p class="story">Со свалки привозят ржавых боевых роботов. Сколько ржавчины сотрёшь с детали — столько силы в ней и останется. Идеал не обязателен. Но противник об этом не знает.</p>
+        <p id="title-progress" class="progress" hidden></p>
+        <button id="btn-play" class="big">В мастерскую</button>
+        <button id="btn-daily-title" class="big alt">Робот дня</button>
+        <div class="row">
+          <button id="btn-lang" class="small lang-btn">Язык: русский</button>
+          <button id="btn-sound" class="small sound-btn">Звук: вкл</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Мастерская: робот целиком, что с ним делать -->
+    <div id="hub" class="screen" hidden>
+      <div class="hub-head">
+        <div id="hub-name" class="robot-name"></div>
+        <div id="hub-sub" class="robot-sub"></div>
+      </div>
+      <div class="hub-bottom">
+        <div id="hub-stats" class="stats"></div>
+        <button id="btn-restore" class="big">Восстанавливать</button>
+        <button id="btn-assemble" class="big" hidden>Собрать робота</button>
+        <div class="row wrap">
+          <button id="btn-collection" class="mid">Коллекция</button>
+          <button id="btn-arena" class="mid">Арена</button>
+          <button id="btn-shop" class="mid">Магазин</button>
+          <button id="btn-daily" class="mid">Робот дня</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Деталь: чистка и покраска -->
+    <div id="work" class="screen" hidden>
+      <div class="work-head">
+        <div class="work-title"><span id="part-name"></span> <span id="part-idx" class="dim"></span></div>
+        <div class="work-stat"><span id="part-stat"></span></div>
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 40 40" aria-hidden="true">
+            <circle class="ring-bg" cx="20" cy="20" r="17"></circle>
+            <circle id="ring-fill" class="ring-fg" cx="20" cy="20" r="17"></circle>
+          </svg>
+          <div id="part-pct" class="ring-pct" role="progressbar" aria-label="Чистота детали" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">0%</div>
+        </div>
+        <div id="daily-timer" class="timer" hidden></div>
+      </div>
+      <div id="work-hint" class="hint">Води пальцем по детали. Мимо детали — вращай.</div>
+      <div class="work-bottom">
+        <div id="tools" class="tools"></div>
+        <div id="paints" class="tools" hidden></div>
+        <div class="row">
+          <button id="btn-prev" class="icon-btn" aria-label="Предыдущая деталь">‹</button>
+          <button id="btn-corners" class="mid ad" hidden>Дочистить углы (реклама)</button>
+          <button id="btn-paint-mode" class="mid">Краска</button>
+          <button id="btn-next" class="icon-btn" aria-label="Следующая деталь">›</button>
+        </div>
+        <button id="btn-part-done" class="big">Готово</button>
+      </div>
+    </div>
+
+    <!-- Коллекция -->
+    <div id="collection" class="screen list" hidden>
+      <h2>Коллекция</h2>
+      <p id="slots-line" class="dim"></p>
+      <div id="collection-list" class="cards"></div>
+      <button id="btn-buy-slot" class="mid" hidden>Купить слот</button>
+    </div>
+
+    <!-- Арена: сравнение перед боем -->
+    <div id="prefight" class="screen list" hidden>
+      <h2>Арена</h2>
+      <div id="prefight-cards" class="versus"></div>
+      <p id="prefight-odds" class="dim"></p>
+      <button id="btn-boost" class="mid ad">Усилить на бой (реклама)</button>
+      <button id="btn-fight" class="big">В бой</button>
+      <p id="prefight-empty" class="dim" hidden>Сначала восстанови и собери робота.</p>
+    </div>
+
+    <!-- Бой -->
+    <div id="fight" class="screen" hidden>
+      <div class="fight-top">
+        <div class="fighter left">
+          <div id="f0-name" class="fighter-name"></div>
+          <div class="bar hp" role="progressbar" aria-label="Здоровье"><div id="f0-hp"></div></div>
+          <div class="bar en"><div id="f0-en"></div></div>
+        </div>
+        <div class="fighter right">
+          <div id="f1-name" class="fighter-name"></div>
+          <div class="bar hp" role="progressbar" aria-label="Здоровье противника"><div id="f1-hp"></div></div>
+          <div class="bar en"><div id="f1-en"></div></div>
+        </div>
+      </div>
+      <button id="btn-fast" class="small ghost">Быстрее ×3</button>
+    </div>
+
+    <!-- Итог боя -->
+    <div id="result" class="screen menu" hidden>
+      <div class="panel">
+        <h2 id="result-title">Победа</h2>
+        <p id="result-text" class="story"></p>
+        <p id="result-coins" class="reward"></p>
+        <button id="btn-double" class="big ad" hidden>Удвоить награду (реклама)</button>
+        <button id="btn-rematch" class="big ad" hidden>Реванш с усилением (реклама)</button>
+        <button id="btn-result-next" class="big">Дальше</button>
+        <button id="btn-result-shop" class="small">Магазин</button>
+      </div>
+    </div>
+
+    <!-- Магазин -->
+    <div id="shop" class="screen list" hidden>
+      <h2>Магазин</h2>
+      <h3>Инструменты</h3>
+      <div id="shop-tools" class="cards"></div>
+      <h3>Краски</h3>
+      <div id="shop-paints" class="cards"></div>
+      <h3>Коллекция</h3>
+      <div id="shop-slots" class="cards"></div>
+      <button id="btn-rare-paint" class="mid ad">Редкая краска (реклама)</button>
+    </div>
+
+    <!-- Робот дня -->
+    <div id="daily" class="screen menu" hidden>
+      <div class="panel">
+        <h2>Робот дня</h2>
+        <p class="story">Один и тот же робот у всех игроков сегодня. Отчисти все пять деталей до блеска — на время. Лучшее время попадает в таблицу.</p>
+        <p id="daily-best" class="dim"></p>
+        <p id="daily-done" class="dim" hidden>Сегодняшний робот уже собран. Завтра будет новый.</p>
+        <button id="btn-daily-start" class="big">Начать</button>
+        <button id="btn-daily-back" class="small">Назад</button>
+      </div>
+    </div>
+
+    <!-- Пауза (уход со вкладки) -->
+    <div id="pause" class="screen menu" hidden>
+      <div class="panel">
+        <h2>Пауза</h2>
+        <button id="btn-resume" class="big">Продолжить</button>
+        <div class="row">
+          <button id="btn-lang2" class="small lang-btn">Язык: русский</button>
+          <button id="btn-sound2" class="small sound-btn">Звук: вкл</button>
+        </div>
+        <button id="btn-quit" class="small">В главное меню</button>
+      </div>
+    </div>
+
+    <div id="flash"></div>
+    <div id="float-layer"></div>
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+  </div>
+</body>
+</html>
