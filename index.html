@@ -35,8 +35,8 @@
 <script src="./libs/vk-bridge.min.js"></script>
 <script>window.__PLATFORM__='vkok';</script>
 <script src="./libs/vkok-boot.js"></script>
-  <script type="module" crossorigin src="./assets/index-CwhX9f1I.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CzvMdtkf.css">
+  <script type="module" crossorigin src="./assets/index-DdWFj__a.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BmGztFQX.css">
 </head>
 <body>
   <div id="boot" role="status" aria-live="polite" aria-label="Загрузка…">
@@ -81,10 +81,13 @@
         <div id="hub-stats" class="stats"></div>
         <button id="btn-restore" class="big">Восстанавливать</button>
         <button id="btn-assemble" class="big" hidden>Собрать робота</button>
+        <p id="hub-goal" class="goal"></p>
+        <button id="btn-crate" class="mid ad wide" hidden>Ящик со свалки (реклама)</button>
         <div class="row wrap">
           <button id="btn-collection" class="mid">Коллекция</button>
           <button id="btn-arena" class="mid">Арена</button>
           <button id="btn-shop" class="mid">Магазин</button>
+          <button id="btn-quests" class="mid">Задания</button>
           <button id="btn-daily" class="mid">Робот дня</button>
         </div>
       </div>
@@ -111,6 +114,7 @@
         <div class="row">
           <button id="btn-prev" class="icon-btn" aria-label="Предыдущая деталь">‹</button>
           <button id="btn-corners" class="mid ad" hidden>Дочистить углы (реклама)</button>
+          <button id="btn-loan" class="mid ad" hidden>Пескоструй напрокат (реклама)</button>
           <button id="btn-paint-mode" class="mid">Краска</button>
           <button id="btn-next" class="icon-btn" aria-label="Следующая деталь">›</button>
         </div>
@@ -206,8 +210,28 @@
         <p id="daily-best" class="dim"></p>
         <p id="daily-done" class="dim" hidden>Сегодняшний робот уже собран. Завтра будет новый.</p>
         <button id="btn-daily-start" class="big">Начать</button>
+        <button id="btn-daily-double" class="big ad" hidden>Удвоить награду (реклама)</button>
         <button id="btn-daily-back" class="small">Назад</button>
       </div>
+    </div>
+
+    <!-- Задания главы -->
+    <div id="quests" class="screen list" hidden>
+      <h2 id="quests-chapter"></h2>
+      <p id="quests-goal" class="league"></p>
+      <div id="quests-list" class="cards"></div>
+    </div>
+
+    <!-- Сюжет: реплики Искры поверх любого экрана -->
+    <div id="dialog" hidden>
+      <div class="dialog-box">
+        <div class="portrait" aria-hidden="true"></div>
+        <div class="dialog-body">
+          <div id="dialog-who" class="dialog-who"></div>
+          <div id="dialog-text" class="dialog-text"></div>
+        </div>
+      </div>
+      <button id="btn-dialog-next" class="big">Дальше</button>
     </div>
 
     <!-- Пауза (уход со вкладки) -->
